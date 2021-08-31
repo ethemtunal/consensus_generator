@@ -1,3 +1,6 @@
+from numpy import percentile
+
+
 def get_iou(box1, box2):
     # determine the (x, y)-coordinates of the intersection rectangle
     x1 = max(box1[0], box2[0])
@@ -21,3 +24,11 @@ def get_iou(box1, box2):
 
     # return the intersection over union value
     return iou * 10
+
+
+def get_valid_range(coordinates):
+    q1, q3 = percentile(sorted(coordinates), [25, 75])
+    iqr = q3 - q1
+    upper_bound = q3 + (1.5 * iqr)
+    lower_bound = q1 - (1.5 * iqr)
+    return {"lower": lower_bound, "upper": upper_bound}
