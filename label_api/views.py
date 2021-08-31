@@ -5,9 +5,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from .helpers import *
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 
 class ImageAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         images = Image.objects.all()
@@ -24,7 +28,9 @@ class ImageAPIView(APIView):
 
 
 class ImageDetailAPIView(APIView):
-
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
     def get_object(self, pk):
         try:
             return Image.objects.filter(uuid=pk)
@@ -51,6 +57,8 @@ class ImageDetailAPIView(APIView):
 
 
 class AnnotatorAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         annotator = Annotator.objects.all()
@@ -67,6 +75,8 @@ class AnnotatorAPIView(APIView):
 
 
 class AnnotatorDetailAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -94,6 +104,8 @@ class AnnotatorDetailAPIView(APIView):
 
 
 class AnnotationAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         annotation = Annotation.objects.all()
@@ -166,8 +178,8 @@ class AnnotationAPIView(APIView):
 
 
 class AnnotationDetailAPIView(APIView):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -245,6 +257,8 @@ class AnnotationDetailAPIView(APIView):
 
 
 class ConsensusAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         consensus = Consensus.objects.all()
@@ -261,6 +275,8 @@ class ConsensusAPIView(APIView):
 
 
 class CalculateConsensusAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # Calculate annotator scores for known images
@@ -347,6 +363,8 @@ class CalculateConsensusAPIView(APIView):
 
 
 class CalculateImageConsensus(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
