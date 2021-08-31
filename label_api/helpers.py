@@ -32,3 +32,11 @@ def get_valid_range(coordinates):
     upper_bound = q3 + (1.5 * iqr)
     lower_bound = q1 - (1.5 * iqr)
     return {"lower": lower_bound, "upper": upper_bound}
+
+
+def is_invalid_range(coordinates):
+    bounds = get_valid_range(coordinates)
+    upper = coordinates >= bounds["upper"]
+    lower = coordinates <= bounds["lower"]
+    result = [i or j for i, j in zip(upper, lower)]
+    return result
