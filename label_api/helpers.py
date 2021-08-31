@@ -40,3 +40,13 @@ def is_invalid_range(coordinates):
     lower = coordinates <= bounds["lower"]
     result = [i or j for i, j in zip(upper, lower)]
     return result
+
+
+def get_non_valid(boxes):
+    x1s = is_invalid_range([b["box"][0] for b in boxes])
+    y1s = is_invalid_range([b["box"][1] for b in boxes])
+    x2s = is_invalid_range([b["box"][2] for b in boxes])
+    y2s = is_invalid_range([b["box"][3] for b in boxes])
+    annotation_ids = [b["annotation"] for b in boxes]
+    result = {a: [i, j, k, l] for a, i, j, k, l in zip(annotation_ids, x1s, y1s, x2s, y2s)}
+    return result
