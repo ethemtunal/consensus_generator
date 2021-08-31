@@ -50,3 +50,33 @@ def get_non_valid(boxes):
     annotation_ids = [b["annotation"] for b in boxes]
     result = {a: [i, j, k, l] for a, i, j, k, l in zip(annotation_ids, x1s, y1s, x2s, y2s)}
     return result
+
+
+def calculate_consensus(boxes):
+    scores = {}
+    for box1 in boxes:
+        for box2 in boxes:
+            name = str(box1["annotator"]) + "_" + str(box2["annotator"])
+            r_name = str(box2["annotator"]) + "_" + str(box1["annotator"])
+            if name not in scores and r_name not in scores and name != r_name:
+                score = get_iou(box1["box"], box2["box"]) * box1["score"] * box2["score"]
+                scores[name] = score * 10
+                scores[r_name] = score * 10
+    annotator_ids = [x for x in min(scores, key=scores.get).split("_")]
+    consensus_score = min(scores.values())
+    custom_x1 = []
+    custom_y1 = []
+    custom_x2 = []
+    custom_y2 = []
+    for b in boxes:
+        custom_x1.extend(round(b["score"]) * [b["box"][0]])
+        custom_y1.extend(round(b["score"]) * [b["box"][1]])
+        custom_x2.extend(round(b["score"]) * [b["box"][2]])
+        custom_y2.extend(round(b["score"]) * [b["box"][3]])
+    bounds = {
+        "x1_bounds": get_valid_range(custom_x1),
+        "y1_bounds": get_valid_range(custom_y1),
+        "x2_bounds": get_valid_range(custom_x2),
+        "y2_bounds": get_valid_range(custom_y2)
+    }
+    return {"annotator_ids": annotator_ids, "consensus_score": consensus_score, "bounds": bounds}
