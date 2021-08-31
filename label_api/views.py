@@ -30,7 +30,7 @@ class ImageAPIView(APIView):
 class ImageDetailAPIView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    
+
     def get_object(self, pk):
         try:
             return Image.objects.filter(uuid=pk)
