@@ -353,14 +353,6 @@ class CalculateConsensusAPIView(APIView):
             image_calculate.save()
         return Response("Consensus created", status=status.HTTP_201_CREATED)
 
-    def post(self, request):
-        serializer = ConsensusSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CalculateImageConsensus(APIView):
     authentication_classes = [TokenAuthentication]
