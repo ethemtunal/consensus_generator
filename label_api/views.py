@@ -258,3 +258,89 @@ class ConsensusAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CalculateConsensusAPIView(APIView):
+
+    def get(self, request):
+        # Calculate annotator scores for known images
+        images = Image.objects.filter(known=True)
+        for image in images:
+            known_image_id = image.id
+            # Get unprocessed annotations for the known image
+            annotations = Annotation.objects.filter(image=known_image_id, processed=False)
+            for annotation in annotations:
+                annotator_id = annotation.annotator
+                box1 = [image.x1, image.y1, image.x2, image.y2]
+                box2 = [annotation.x1, annotation.y1, annotation.x2, annotation.y2]
+                annotation_score = get_iou(box1, box2)
+                previous_known_annotations = Annotation.objects.filter(annotator=annotator_id, image__known=True, processed=True)
+                annotator_points = [float(k.point) for k in previous_known_annotations]
+                annotator_points.append(annotation_score)
+                annotator_point = sum(annotator_points) / len(annotator_points)
+                annotator_save = Annotator.objects.get(id=annotator_id)
+                setattr(annotator_save, "score", annotator_point)
+                annotator_save.save()
+                annotation.processed.set(True)
+                annotation.save()
+
+        images_to_calculate = Image.objects.filter(known=False, calculated=False)
+        for image_calculate in images_to_calculate:
+            image_id = image_calculate.id
+            # Get unprocessed annotation
+            calculate_annotations = Annotation.objects.filter(image=image_id, processed=False)
+            boxes = []
+            for c_annotation in calculate_annotations:
+                c_annotator_id = c_annotation.annotator.id
+                box = [c_annotation.x1, c_annotation.y1, c_annotation.x2, c_annotation.y2]
+                annotator_score = c_annotation.annotator.score
+                boxes.append({"annotator": c_annotator_id, "box": box, "score": annotator_score, "annotation": c_annotation.id})
+
+            non_valids = get_non_valid(boxes)
+            # Add annotation ids to remove
+            to_remove = []
+            for i in non_valids:
+                update_annotation = Annotation.objects.get(id=i)
+                update_annotation.x1_out = non_valids[i][0]
+                update_annotation.y1_out = non_valids[i][1]
+                update_annotation.x2_out = non_valids[i][2]
+                update_annotation.y2_out = non_valids[i][3]
+                update_annotation.spam = True if True in non_valids[i] else False
+                if True in non_valids[i]:
+                    to_remove.append(i)
+                update_annotation.save()
+            # Filter outliers from boxes
+            filtered_boxes = [b for b in boxes if b["annotation"] not in to_remove]
+            consensus_details = calculate_consensus(filtered_boxes)
+
+            data = {
+                #"annotators": consensus_annotators,
+                "image": Image.objects.get(id=image_id),
+                "score": consensus_details["consensus_score"],
+                "x1_lower": consensus_details["bounds"]["x1_bounds"]["lower"],
+                "x1_upper": consensus_details["bounds"]["x1_bounds"]["upper"],
+                "x2_lower": consensus_details["bounds"]["x2_bounds"]["lower"],
+                "x2_upper": consensus_details["bounds"]["x2_bounds"]["upper"],
+                "y1_lower": consensus_details["bounds"]["y1_bounds"]["lower"],
+                "y1_upper": consensus_details["bounds"]["y1_bounds"]["upper"],
+                "y2_lower": consensus_details["bounds"]["y2_bounds"]["lower"],
+                "y2_upper": consensus_details["bounds"]["y2_bounds"]["upper"],
+                "annotation_count": len(boxes),
+                "spam_count": len(to_remove),
+            }
+            created_consensus = Consensus.objects.create(**data)
+            for i in consensus_details["annotator_ids"]:
+                temp_annotator = Annotator.objects.get(id=i)
+                created_consensus.annotators.add(temp_annotator)
+            #created_consensus.save()
+            image_calculate.calculated = True
+            image_calculate.save()
+        return Response("Consensus created", status=status.HTTP_201_CREATED)
+
+    def post(self, request):
+        serializer = ConsensusSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
