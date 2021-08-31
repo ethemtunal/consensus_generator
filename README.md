@@ -212,3 +212,4 @@
 `"Consensus created"`
 
 
+![alt text](https://github.com/ethemtunal/consensus_generator/blob/develop/tables.png?raw=true)
